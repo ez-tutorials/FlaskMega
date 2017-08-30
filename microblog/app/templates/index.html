@@ -1,0 +1,13 @@
+<!-- Since the base.html template will now take care of the general page structure we have removed those elements from this one
+and left only the content part. The extends block establishes the inheritance link between the two templates, so that Jinja2
+knows that when it needs to render index.html it needs to include it inside base.html. The two templates have matching block
+statements with name content, and this is how Jinja2 knows how to combine the two into one. When we get to write new templates
+we will also create them as extensions to base.html. -->
+
+{% extends "base.html" %} {% block content %}
+<h1>Hi, {{ user.nickname }}!</h1>
+{% for post in posts %}
+<div>
+    <p>{{ post.author.nickname }} says: <b>{{ post.body }}</b></p>
+</div>
+{% endfor %} {% endblock %}

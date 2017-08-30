@@ -1,0 +1,18 @@
+<html>
+
+<head>
+    {% if title %}
+        <title>{{ title }} - microblog</title>
+    {% else %}
+        <title>Welcom to microblog</title>
+    {% endif %}
+</head>
+
+<!-- In this template we use the block control statement to define the place where the derived templates can insert themselves.
+Blocks are given a unique name, and their content can be replaced or enhanced in derived templates. -->
+<body>
+    <div>Microblog: <a href="/index">Home</a></div>
+    <hr> {% block content %}{% endblock %}
+</body>
+
+</html>

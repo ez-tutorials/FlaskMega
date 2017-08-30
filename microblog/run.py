@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!../flask/bin/python
 
 """
 The script simply imports the app variable from our app package and invokes its run method to start the server. 
