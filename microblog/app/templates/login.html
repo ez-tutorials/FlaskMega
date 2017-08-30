@@ -1,0 +1,44 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+
+{% block content %}
+    <script type="text/javascript">
+        function set_openid(openid, pr) {
+            u = openid.search('<username>')
+            if (u != -1) {
+                // openid requires username
+                user = prompt('Enter your ' + pr + ' username:')
+                openid = openid.substr(0, u) + user
+            }
+            form = document.forms['login'];
+            form.elements['openid'].value = openid
+        }
+    </script>
+    <h1>Sign In</h1>
+    <form action="" method="post" name="login">
+        <!-- The form.hidden_tag() template argument will get replaced with a hidden field that implements the CSRF prevention that we
+        enabled in the configuration. This field needs to be in all your forms if you have CSRF enabled. The good news is
+        that Flask-WTF handles it for us, we just need to make sure it is included in the form. -->
+        {{ form.hidden_tag() }}
+        <!-- The actual fields of our form are rendered by the field objects, we just need to refer to a {{form.field_name}} template
+        argument in the place where each field should be inserted. Some fields can take arguments. In our case, we are asking
+        the text field to generate our openid field with a width of 80 characters. -->
+        <p>
+            Please enter your OpenID, or select one of the providers below:<br>
+            {{ form.openid(size=80) }}<br>
+            <!-- The only change we've made is to add a for loop that renders any messages added by the validators below the openid field.
+            As a general rule, any fields that have validators attached will have errors added under form.field_name.errors.
+            In our case we use form.openid.errors. We display these messages in a red style to call the user's attention. -->
+            {% for error in form.openid.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}<br>
+            |{% for pr in providers %}
+                <a href="javascript:set_openid('{{ pr.url }}', '{{ pr.name }}');">{{ pr.name }}</a> |
+            {% endfor %}
+        </p>
+        <p>{{ form.remember_me }} Remember Me</p>
+        <!-- Since we have not defined the submit button in the form class we have to define it as a regular field. The submit field does
+        not carry any data so it doesn't need to be defined in the form class. -->
+        <p><input type="submit" value="Sign In"></p>
+    </form>
+{% endblock %}
