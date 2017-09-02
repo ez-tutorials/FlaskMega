@@ -29,6 +29,21 @@ class User(db.Model):
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime)
 
+    @staticmethod
+    def make_unique_nickname(nickname):
+        """
+        This method simply adds a counter to the requested nickname until a unique name is found. For example, if the username "miguel" exists, the method will suggest "miguel2", but if that also exists it will go to "miguel3" and so on. Note that we coded the method as a static method, since it this operation does not apply to any particular instance of the class.
+        """
+        if User.query.filter_by(nickname=nickname).first() is None:
+            return nickname
+        version = 2
+        while True:
+            new_nickname = nickname + str(version)
+            if User.query.filter_by(nickname=new_nickname).first() is None:
+                break
+            version += 1
+        return new_nickname
+    
     @property
     def is_authenticated(self):
         return True

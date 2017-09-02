@@ -14,11 +14,11 @@ In practice, we will find that a lot of people don't even know that they already
 To make it easier for users to login to our site with one of these commonly available OpenIDs, we will add links to a short list of them, so that the user does not have to type the OpenID by hand.
 """
 OPENID_PROVIDERS = [
-    {'name': 'Facebook', 'url': 'http://www.facebook.com/<username>'},
+    {'name': 'Facebook', 'url': 'http://www.facebook.com'},
     {'name': 'Google', 'url': 'https://www.google.com/accounts/o8/id'},
     {'name': 'Yahoo', 'url': 'https://me.yahoo.com'},
     {'name': 'AOL', 'url': 'http://openid.aol.com/<username>'},
-    {'name': 'Flickr', 'url': 'http://www.flickr.com/<username>'},
+    {'name': 'Flickr', 'url': 'http://www.flickr.com/people/<username>'},
     {'name': 'MyOpenID', 'url': 'https://www.myopenid.com'}]
 
 
@@ -35,3 +35,13 @@ SQLALCHEMY_MIGRATE_REPO = os.path.join(basedir, 'db_repository')
 FSADeprecationWarning: SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True or False to suppress this warning.
 """
 SQLALCHEMY_TRACK_MODIFICATIONS = True
+
+
+# mail server settings
+MAIL_SERVER = 'localhost'
+MAIL_PORT = 25
+MAIL_USERNAME = 'zhouen.nathan'
+MAIL_PASSWORD = 'ZhEn1981@810904ZE'
+
+# administrator list
+ADMINS = ['zhouen.nathan@gmail.com']
