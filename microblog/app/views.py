@@ -1,14 +1,27 @@
-from app import app
-from flask import render_template, flash, redirect
+from flask import render_template, flash, redirect, session, url_for, request, g
+"""
+The g global is setup by Flask as a place to store and share data during the life of a request. As I'm sure you guessed by now, we will be storing the logged in user here.
+
+The url_for function that we used in the redirect call is defined by Flask as a clean way to obtain the URL for a given view function. If you want to redirect to the index page you may very well use redirect('/index'), but there are very good reasons to let Flask build URLs for you.
+
+The flask.session provides a much more complex service along those lines. Once data is stored in the session object it will be available during that request and any future requests made by the same client. Data remains in the session until explicitly removed. To be able to do this, Flask keeps a different session container for each client of our application.
+"""
+from flask_login import login_user, logout_user, current_user, login_required
+from app import app, db
+from app import oid, lm
 from .forms import LoginForm
+from .models import User
 
 """
 The two route decorators above the function create the mappings from URLs / and /index to this function.
 """
+
+
 @app.route('/')
 @app.route('/index')
+@login_required
 def index():
-    user = {'nickname': 'Nathan'}
+    user = g.user
     posts = [  # fake array of posts
         {
             'author': {'nickname': 'John'},
@@ -63,11 +76,15 @@ all templates and put them in a base template from which all other templates are
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@oid.loginhandler
 def login():
+    if g.user is not None and g.user.is_authenticated:
+        return redirect(url_for('index'))
     form = LoginForm()
     if form.validate_on_submit():
-        flash('Login requested for OpenID="%s", remember_me=%s' %(form.openid.data, str(form.remember_me.data)))
-        return redirect('/index')
+        session['remember_me'] = form.remember_me.data
+        # flash('Login requested for OpenID="%s", remember_me=%s' %(form.openid.data, str(form.remember_me.data)))
+        return oid.try_login(form.openid.data, ask_for=['nickname', 'email'])
     return render_template(
         'login.html',
         title='Sign In',
@@ -89,3 +106,53 @@ If at least one field fails validation then the function will return False and t
 """
 When validate_on_submit returns True our login view function calls two new functions, imported from Flask. The flash function is a quick way to show a message on the next page presented to the user. In this case we will use it for debugging, since we don't have all the infrastructure necessary to log in users yet, we will instead just display a message that shows the submitted data. The flash function is also extremely useful on production servers to provide feedback to the user regarding an action. 
 """
+
+@lm.user_loader
+def load_user(id):
+    """
+    user ids in Flask-Login are always unicode strings, so a conversion to an integer is necessary before we can send the id to Flask-SQLAlchemy.
+    """
+    return User.query.get(int(id))
+
+
+@oid.after_login
+def after_login(resp):
+    """
+    The first if statement is just for validation. We require a valid email, so if an email was not provided we cannot log the user in.
+    """
+    if resp.email is None or resp.email == "":
+        flash('Invalid login. Please try again.')
+        return redirect(url_for('login'))
+    """
+    If the email is not found we consider this a new user, so we add a new user to our database, pretty much as we have learned in the previous chapter. Note that we handle the case of a missing nickname, since some OpenID providers may not have that information.
+    """
+    user = User.query.filter_by(email=resp.email).first()
+    if user is None:
+        nickname = resp.nickname
+        if nickname is None or nickname == "":
+            nickname = resp.email.split('@')[0]
+        user = User(nickname=nickname, email=resp.email)
+        db.session.add(user)
+        db.session.commit()
+    remember_me = False
+    if 'remember_me' in session:
+        remember_me = session['remember_me']
+        session.pop('remember_me', None)
+    login_user(user, remember=remember_me)
+    """
+    The concept of the next page is simple. Let's say you navigate to a page that requires you to be logged in, but you aren't just yet. In Flask-Login you can protect views against non logged in users by adding the login_required decorator. If the user tries to access one of the affected URLs then it will be redirected to the login page automatically. Flask-Login will store the original URL as the next page, and it is up to us to return the user to this page once the login process completed.
+    """
+    return redirect(request.args.get('next') or url_for('index'))
+
+"""
+we check g.user to determine if a user is already logged in. To implement this we will use the before_request event from Flask. Any functions that are decorated with before_request will run before the view function each time a request is received. 
+"""
+@app.before_request
+def before_request():
+    g.user = current_user
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))

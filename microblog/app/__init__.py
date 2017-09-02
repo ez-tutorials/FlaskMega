@@ -1,6 +1,11 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+import os
+from flask_login import LoginManager
+from flask_openid import OpenID
+from config import basedir
+
 app = Flask(__name__)
 """
 If you are wondering why the import statement is at the end and not at the beginning of the script as it is always done, 
@@ -10,9 +15,15 @@ variable defined in this script. Putting the import at the end avoids the circul
 app.config.from_object('config')
 # Initialize database
 db = SQLAlchemy(app)
-from app import views, models
 
 """
 The views are the handlers that respond to requests from web browsers or other clients. 
 In Flask handlers are written as Python functions. Each view function is mapped to one or more request URLs.
 """
+lm = LoginManager()
+lm.init_app(app)
+lm.login_view = 'login'
+oid = OpenID(app, os.path.join(basedir, 'tmp'))
+
+
+from app import views, models

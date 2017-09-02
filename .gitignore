@@ -1,6 +1,6 @@
 flask/
 .vscode/
-*.zip
+microblog/tmp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
