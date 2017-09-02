@@ -1,4 +1,5 @@
 from app import db
+from hashlib import md5
 
 """
 Relational databases are good at storing relations between data items. Consider the case of a user writing a blog post. The user will have a record in the users table, and the post will have a record in the posts table. The most efficient way to record who wrote a given post is to link the two related records.
@@ -18,6 +19,15 @@ class User(db.Model):
     nickname = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     posts = db.relationship("Post", backref='author', lazy='dynamic')
+    
+    """
+    Every time we modify the database we have to generate a new migration. Remember that in the database chapter we went through the pain of setting up a database migration system. We can see the fruits of that effort now. To add these two new fields to our database we just do this:
+    $ ./db_migrate.py
+
+    PS: close SQLit client before run the above command
+    """
+    about_me = db.Column(db.String(140))
+    last_seen = db.Column(db.DateTime)
 
     @property
     def is_authenticated(self):
@@ -37,6 +47,21 @@ class User(db.Model):
         except NameError:
             return str(self.id)
 
+    def avatar(self, size):
+        """
+        The avatar method of User returns the URL of the user's avatar image, scaled to the requested size in pixels.
+        
+        Turns out with the Gravatar service this is really easy to do. You just need to create an md5 hash of the user email and then incorporate it into the specially crafted URL that you see above. After the md5 of the email you can provide a number of options to customize the avatar. The d=mm determines what placeholder image is returned when a user does not have an Gravatar account. The mm option returns the "mystery man" image, a gray silhouette of a person. The s=N option requests the avatar scaled to the given size in pixels.
+
+        The nice thing about making the User class responsible for returning avatars is that if some day we decide Gravatar avatars are not what we want, we just rewrite the avatar method to return different URLs (even ones that points to our own web server, if we decide we want to host our own avatars), and all our templates will start showing the new avatars automatically.
+        """
+        email = self.email
+        # https: // en.gravatar.com / userimage / 76305420 / e795a415c4e6e3415c961787136428ef.jpg?size = 200
+        # this line is to replace zhouen.nathan@yahoo.com with nathanzhou@qq.com so that Gravatar can work for this email address
+        if email == "zhouen.nathan@yahoo.com":
+            email = "nathanzhou@qq.com"
+        return 'http://www.gravatar.com/avatar/%s?d=mm&s=%d' % (md5(email.encode('utf-8')).hexdigest(), size)
+    
     def __repr__(self):
         """
         The __repr__ method tells Python how to print objects of this class. We will use this for debugging.

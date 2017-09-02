@@ -1,4 +1,5 @@
 from flask import render_template, flash, redirect, session, url_for, request, g
+from datetime import datetime
 """
 The g global is setup by Flask as a place to store and share data during the life of a request. As I'm sure you guessed by now, we will be storing the logged in user here.
 
@@ -9,14 +10,12 @@ The flask.session provides a much more complex service along those lines. Once d
 from flask_login import login_user, logout_user, current_user, login_required
 from app import app, db
 from app import oid, lm
-from .forms import LoginForm
+from .forms import LoginForm, EditForm
 from .models import User
 
 """
 The two route decorators above the function create the mappings from URLs / and /index to this function.
 """
-
-
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -150,9 +149,52 @@ we check g.user to determine if a user is already logged in. To implement this w
 @app.before_request
 def before_request():
     g.user = current_user
+    if g.user.is_authenticated:
+        g.user.last_seen = datetime.utcnow()
+        db.session.add(g.user)
+        db.session.commit()
 
 
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
+
+# User Profile Page
+"""
+The @app.route decorator that we used to declare this view function looks a little bit different than the previous ones. In this case we have an argument in it, which is indicated as <nickname>. This translates into an argument of the same name added to the view function. When the client requests, say, URL /user/miguel the view function will be invoked with nickname set to 'miguel'.
+The implementation of the view function should have no surprises. First we try to load the user from the database, using the nickname that we received as argument. If that doesn't work then we just redirect to the main page with an error message, as we have seen in the previous chapter.
+
+Once we have our user, we just send it in the render_template call, along with some fake posts. Note that in the user profile page we will be displaying only posts by this user, so our fake posts have the author field correctly set.
+"""
+@app.route('/user/<nickname>')
+@login_required
+def user(nickname):
+    user = User.query.filter_by(nickname=nickname).first()
+    if user == None:
+        flash('User %s not found.' % nickname)
+        return redirect(url_for('index'))
+    posts = [
+        {'author': user, 'body': 'Test post #1'},
+        {'author': user, 'body': 'Test post #2'}
+    ]
+    return render_template('user.html',
+                           user=user,
+                           posts=posts)
+
+@app.route('/edit', methods=['GET', 'POST'])
+@login_required
+def edit():
+    form = EditForm()
+    if form.validate_on_submit():
+        g.user.nickname = form.nickname.data
+        g.user.about_me = form.about_me.data
+        db.session.add(g.user)
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('edit'))
+    else:
+        form.nickname.data = g.user.nickname
+        form.about_me.data = g.user.about_me
+    return render_template('edit.html', form=form)
