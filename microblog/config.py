@@ -14,7 +14,6 @@ In practice, we will find that a lot of people don't even know that they already
 To make it easier for users to login to our site with one of these commonly available OpenIDs, we will add links to a short list of them, so that the user does not have to type the OpenID by hand.
 """
 OPENID_PROVIDERS = [
-    {'name': 'Facebook', 'url': 'http://www.facebook.com'},
     {'name': 'Google', 'url': 'https://www.google.com/accounts/o8/id'},
     {'name': 'Yahoo', 'url': 'https://me.yahoo.com'},
     {'name': 'AOL', 'url': 'http://openid.aol.com/<username>'},

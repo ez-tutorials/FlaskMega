@@ -192,6 +192,45 @@ Then, in the browser open [127.0.0.1:5000](127.0.0.1:5000).
 
 * [Part VIII: Followers, Contacts And Friends](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-viii-followers-contacts-and-friends)
 
+    * Database Relationships
+
+    We said we wanted to have all users to have "followed" and "followers" **lists**. Unfortunately, a relational database does not have a list type, all we have are tables with records and relationships between records.
+    We already have a table in our database to represent users, so what's left is to come up with the proper relationship type that can model the follower/followed link. This is a good time to review the three database relationship types:
+    * One-to-many
+
+        ![](https://blog.miguelgrinberg.com/static/images/flask-mega-tutorial-part-iv-2.png)
+
+        The two entities associated with this relationship are users and posts. We say that a user has many posts, and a post has one user. The relationship is represented in the database with the use of a foreign key on the "many" side. In the above example the foreign key is the user_id field added to the posts table. This field links each post to the record of its author in the user table.
+
+        It is pretty clear that the **user\_id** field provides direct access to the author of a given post, but what about the reverse? For the relationship to be useful we should be able to get the list of **posts** written by a given user. Turns out the **user\_id** field in the posts table is enough to answer this question, as databases have indexes that allow for efficient queries such us "retrieve all posts that have a **user\_id** of X".
+
+    * Many-to-many
+
+        A many-to-many relationship is a bit more complex. As an example, consider a database that has students and teachers. We can say that a student has many teachers, and a teacher has many students. It's like two overlapped one-to-many relationships from both ends.
+
+        For a relationship of this type we should be able to query the database and obtain the list of teachers that teach a student, and the list of students in a teacher's class. Turns out this is pretty tricky to represent, it cannot be done by adding foreign keys to the existing tables.
+
+        The representation of a many-to-many relationship requires the use of an auxiliary table called an association table. Here is how the database would look for the students and teachers example:
+
+        ![](https://blog.miguelgrinberg.com/static/images/flask-mega-tutorial-part-viii-1.png)
+
+        While it may not seem straightforward, the association table with its two foreign keys is able to efficiently answer many types of queries, such as:
+
+        * Who are the teachers of student S?
+        * Who are the students of teacher T?
+        * How many students does teacher T have?
+        * How many teachers does student S have?
+        * Is teacher T teaching student S?
+        * Is student S in teacher T's class?
+
+    * One-to-one
+
+        A one-to-one relationship is a special case of a one-to-many. The representation is similar, but a constrain is added to the database to prevent the "many" side to have more than one link.
+
+        While there are cases in which this type of relationship is useful, it isn't as common as the other two types, since any time one record in a table maps to one record in another table it can be argued that it may make sense for these two tables to be merged into one.
+
+
+
 * [Part IX: Pagination](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-ix-pagination)
 
 * [Part X: Full Text Search](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-x-full-text-search)
